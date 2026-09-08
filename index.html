@@ -1,39 +1,27 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <link rel="icon" href="logo_koala.png" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visor Geográfico de Riesgos - Desplazamiento Forzado</title>
     
-    <!-- Leaflet CSS -->
+    <link rel="icon" href="logo_koala.png" type="image/x-icon">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
         body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
         #map { height: 100vh; width: 100%; }
         
-        /* Estilos del selector de escenarios */
         .panel-escenarios {
-            position: absolute;
-            top: 20px;
-            left: 50px;
-            z-index: 1000;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
+            position: absolute; top: 20px; left: 50px; z-index: 1000;
+            background: white; padding: 15px; border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
         .panel-escenarios select {
-            padding: 8px;
-            font-size: 14px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            width: 100%;
-            margin-top: 5px;
+            padding: 8px; font-size: 14px; border-radius: 4px;
+            border: 1px solid #ccc; width: 100%; margin-top: 5px;
         }
 
-        /* Estilos de la leyenda flotante */
         .leyenda {
             background: white; padding: 15px; line-height: 1.6;
             border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
@@ -48,22 +36,19 @@
 </head>
 <body>
 
-    <!-- Panel Flotante para cambiar de Escenario -->
     <div class="panel-escenarios">
         <b>Selecciona el Modelo Predictivo:</b><br>
         <select id="selector-escenario">
-            <option value="NIVEL_ALERTA1">Escenario 1 (Base)</option>
+            <option value="NIVEL_ALERTA4">Escenario 1 (Base)</option>
             <option value="NIVEL_ALERTA2">Escenario 2 (Prueba A)</option>
             <option value="NIVEL_ALERTA3">Escenario 3 (Prueba B)</option>
-            <option value="NIVEL_ALERTA4">Escenario 4 (Prueba C)</option>
-            <option value="NIVEL_ALERTA5">Escenario 5 (Prueba D)</option>
+            <option value="NIVEL_ALERTA1">Escenario 4 (Prueba C)</option>
+            
         </select>
     </div>
 
-    <!-- Contenedor del Mapa -->
     <div id="map"></div>
 
-    <!-- Leaflet JS & Esri -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/esri-leaflet@3.0.10/dist/esri-leaflet.js"></script>
     <script src="https://unpkg.com/esri-leaflet-vector@4.1.0/dist/esri-leaflet-vector.js"></script>
@@ -78,58 +63,73 @@
         }).addTo(map);
 
         function getColor(nivel) {
-            return nivel === 'Prioritario' ? '#800026' :
-                   nivel === 'Alto'        ? '#E31A1C' :
-                   nivel === 'Medio'       ? '#FD8D3C' :
-                   nivel === 'Bajo'        ? '#FED976' :
-                                             '#CCCCCC'; 
+            if (!nivel) return '#CCCCCC';
+            let n = String(nivel).trim().toLowerCase();
+            
+            return n === 'prioritario' ? '#800026' :
+                   n === 'alto'        ? '#E31A1C' :
+                   n === 'medio'       ? '#FD8D3C' :
+                   n === 'bajo'        ? '#FED976' :
+                                         '#CCCCCC'; 
         }
 
-        // LISTA DE MUNICIPIOS DESTACADOS (Sur del Estado)
         const municipiosDestacados = [
-            '15082', // Tejupilco
-            '15123', // Luvianos
-            '15008', // Amatepec
-            '15105', // Tlatlaya
-            '15080', // Sultepec
-            '15097', // Texcaltitlán
-            '15086', // Temascaltepec
-            '15066'  // Otzoloapan
+            '15082', '15123', '15008', '15105', '15080', '15097', '15086', '15066'
         ];
 
         let escenarioActual = 'NIVEL_ALERTA1';
 
-        // Estilo dinámico con resaltado rojo
         function styleCoropleta(feature) {
-            // Forzamos a texto por si el GeoJSON trae el CVE_MUN como número
-            let cve = String(feature.properties.CVE_MUN);
+            let props = feature.properties || {}; 
+            
+            // Forzamos la lectura directa de CVE_MUN y lo convertimos a texto limpio
+            let cve = String(props.cve_inegi).trim();
             let esDestacado = municipiosDestacados.includes(cve);
+            
+            let nivel = props[escenarioActual] || props['NIVEL_ALERTA'] || props['nivel_alerta'] || 'N/D';
 
             return {
-                fillColor: getColor(feature.properties[escenarioActual]),
-                weight: esDestacado ? 3 : 1.5, // Borde más grueso si es destacado
+                fillColor: getColor(nivel),
+                weight: esDestacado ? 3.5 : 1, // Borde más grueso para los destacados
                 opacity: 1,
-                color: esDestacado ? '#ff0000' : '#ffffff', // Borde rojo si es destacado, si no blanco
+                color: esDestacado ? '#ff0000' : '#ffffff', // Rojo puro vs Blanco
                 fillOpacity: 0.75
             };
         }
 
         let capaRiesgo; 
 
-        fetch('municipios_riesgo1.geojson')
-            .then(response => response.json())
+        // Actualizado a municipios_riesgo2.geojson
+        fetch('municipios_riesgo2.geojson')
+            .then(response => {
+                if (!response.ok) throw new Error("No se pudo leer el GeoJSON.");
+                return response.json();
+            })
             .then(data => {
                 
-                // CAPA 1: Polígonos
+                // CAPA 1
                 capaRiesgo = L.geoJson(data, {
                     style: styleCoropleta,
                     onEachFeature: function (feature, layer) {
+                        
+                        let props = feature.properties || {};
+                        let cve = String(props.CVE_MUN).trim();
+                        let esDestacado = municipiosDestacados.includes(cve);
+
+                        // TRUCO: Mandar los bordes rojos al frente para que no los tapen los bordes blancos
+                        if (esDestacado) {
+                            layer.on('add', function () {
+                                layer.bringToFront();
+                            });
+                        }
+
+                        // Popup
                         layer.on('click', function(e) {
-                            var nivel = feature.properties[escenarioActual] || 'N/D';
+                            var nivel = props[escenarioActual] || props['NIVEL_ALERTA'] || props['nivel_alerta'] || 'Sin Datos';
+                            var nombre = props.NOM_MUN || props.nom_mun || props.Nom_Mun || 'Municipio Desconocido';
                             
-                            // Popup limpio sin el Score
                             var contenido = "<div style='text-align:center;'>" +
-                                "<h3 style='margin:0 0 5px 0; color:#333;'>" + feature.properties.NOM_MUN + "</h3>" +
+                                "<h3 style='margin:0 0 5px 0; color:#333;'>" + nombre + "</h3>" +
                                 "Nivel de Alerta: <b>" + nivel + "</b><br>" +
                                 "</div>";
                             
@@ -138,15 +138,19 @@
                     }
                 }).addTo(map);
 
-                // CAPA 2: Puntos de Casos
+                // CAPA 2
                 var capaCasos = L.layerGroup().addTo(map);
                 
                 capaRiesgo.eachLayer(function(layer) {
-                    var casos = layer.feature.properties.CASOS_REALES_DESPLAZAMIENTO;
+                    let props = layer.feature.properties || {};
+                    var casos = props.CASOS_REALES_DESPLAZAMIENTO || props.casos_reales_desplazamiento || props.Casos_Reales_Desplazamiento || 0;
+                    
                     if (casos > 0) {
                         var centroide = layer.getBounds().getCenter();
+                        var nombre = props.NOM_MUN || props.nom_mun || props.Nom_Mun || 'Municipio';
+                        
                         var circulo = L.circleMarker(centroide, {
-                            radius: 6, // Tamaño fijo
+                            radius: 6,
                             fillColor: "#0055ff",
                             color: "#ffffff", 
                             weight: 2,
@@ -154,7 +158,7 @@
                             fillOpacity: 0.8
                         }).bindPopup(
                             "<div style='text-align:center;'>" +
-                            "<b>" + layer.feature.properties.NOM_MUN + "</b><br>" +
+                            "<b>" + nombre + "</b><br>" +
                             "<span style='font-size:14px; color:#0055ff;'><b>" + casos + "</b> Reportes vinculados a desplazamientos</span>" +
                             "</div>"
                         );
@@ -162,24 +166,32 @@
                     }
                 });
 
-                // Control de Capas interactivo (Nombres actualizados)
                 var controles = {
                     "🔴 Polígonos de Riesgo": capaRiesgo,
                     "🔵 Reportes vinculados a desplazamientos": capaCasos
                 };
                 L.control.layers(null, controles, {collapsed: false}).addTo(map);
-            });
+            })
+            .catch(error => console.error("Error crítico: ", error));
 
-        // Cambio de Escenario
         document.getElementById('selector-escenario').addEventListener('change', function(e) {
             escenarioActual = e.target.value; 
             if (capaRiesgo) {
                 capaRiesgo.setStyle(styleCoropleta);
+                
+                // Volver a mandar al frente los polígonos rojos al cambiar de escenario
+                capaRiesgo.eachLayer(function(layer) {
+                    let props = layer.feature.properties || {};
+                    let cve = String(props.CVE_MUN).trim();
+                    if (municipiosDestacados.includes(cve)) {
+                        layer.bringToFront();
+                    }
+                });
+                
                 map.closePopup(); 
             }
         });
 
-        // Leyenda (Textos actualizados)
         var legend = L.control({position: 'bottomright'});
         legend.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'leyenda'),
@@ -190,7 +202,6 @@
                 div.innerHTML += '<i style="background:' + getColor(niveles[i]) + '"></i> ' + niveles[i] + '<br>';
             }
             div.innerHTML += '<hr style="margin:10px 0; border:0; border-top:1px solid #ccc;">';
-            // Texto actualizado
             div.innerHTML += '<i style="background:#0055ff; border-radius:50%; height:14px; width:14px; margin-top:2px;"></i> Reportes vinculados a desplazamientos';
             return div;
         };
