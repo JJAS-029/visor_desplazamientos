@@ -6,62 +6,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visor Geográfico de Riesgos - Desplazamiento Forzado</title>
     
-    <!-- 1. Leaflet CSS -->
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
         body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
         #map { height: 100vh; width: 100%; }
         
+        /* Estilos del selector de escenarios */
+        .panel-escenarios {
+            position: absolute;
+            top: 20px;
+            left: 50px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .panel-escenarios select {
+            padding: 8px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            width: 100%;
+            margin-top: 5px;
+        }
+
         /* Estilos de la leyenda flotante */
         .leyenda {
-            background: white; 
-            padding: 15px; 
-            line-height: 1.6;
-            border-radius: 8px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            font-size: 14px;
-            color: #333;
+            background: white; padding: 15px; line-height: 1.6;
+            border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-size: 14px; color: #333;
         }
         .leyenda h4 { margin: 0 0 10px 0; font-size: 15px; color: #111; }
         .leyenda i {
-            width: 18px; 
-            height: 18px; 
-            float: left;
-            margin-right: 8px; 
-            opacity: 0.85;
-            border: 1px solid rgba(0,0,0,0.2);
+            width: 18px; height: 18px; float: left;
+            margin-right: 8px; opacity: 0.85; border: 1px solid rgba(0,0,0,0.2);
         }
-        /* Ajuste para el popup */
-        .leaflet-popup-content { font-size: 14px; line-height: 1.5; }
     </style>
 </head>
 <body>
 
+    <!-- Panel Flotante para cambiar de Escenario -->
+    <div class="panel-escenarios">
+        <b>Selecciona el Modelo Predictivo:</b><br>
+        <select id="selector-escenario">
+            <option value="NIVEL_ALERTA1">Escenario 1 (Base)</option>
+            <option value="NIVEL_ALERTA2">Escenario 2 (Prueba A)</option>
+            <option value="NIVEL_ALERTA3">Escenario 3 (Prueba B)</option>
+            <option value="NIVEL_ALERTA4">Escenario 4 (Prueba C)</option>
+            <option value="NIVEL_ALERTA5">Escenario 5 (Prueba D)</option>
+        </select>
+    </div>
+
     <!-- Contenedor del Mapa -->
     <div id="map"></div>
 
-    <!-- 2. Leaflet JS -->
+    <!-- Leaflet JS & Esri -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- 3. Librerías de Esri para Leaflet (Requeridas para el mapa base ArcGIS) -->
     <script src="https://unpkg.com/esri-leaflet@3.0.10/dist/esri-leaflet.js"></script>
     <script src="https://unpkg.com/esri-leaflet-vector@4.1.0/dist/esri-leaflet-vector.js"></script>
     
     <script>
-        // Inicializar el mapa centrado en el Estado de México (Toluca aprox)
         var map = L.map('map').setView([19.32, -99.65], 9);
-
-        // Tu API Key de ArcGIS
         const llaveEsri = "AAPTa8q9jVjx5yp9dWDmt4yON9Q..LuVerHfjba0cWJIHGg_nNNACso7kRNpVFovApP9NrQOMagkhYy8Z2arUVa-3l4q9uLEotqfSEEdoMCyrK_7iyEV_UUoIuwjFO2-XDNOuM8q9vw7XfSjhTokEYEQwFCONc_PFS3fImFwbFvAHAot4eZQJATJNCGowJeVor5AxCxUyZnwDz463W74IpQ5OTFRvraU58a7NEOZc_p6CSrVxW4AmXhQ0jqKonEpdGQ1nvUa-cBdSUbSHG4I.AT1_FDeLxvxn";
 
-        // Agregar el mapa base vectorial de ArcGIS (Estilo Topográfico)
         L.esri.Vector.vectorBasemapLayer("ArcGIS:ChartedTerritory", {
             apikey: llaveEsri,
-            pane: 'tilePane' // Escudo WebGL activado
+            pane: 'tilePane' 
         }).addTo(map);
 
-        // Función de colores para el semáforo de riesgo
         function getColor(nivel) {
             return nivel === 'Prioritario' ? '#800026' :
                    nivel === 'Alto'        ? '#E31A1C' :
@@ -70,50 +85,69 @@
                                              '#CCCCCC'; 
         }
 
-        // Estilo de los polígonos municipales
+        // LISTA DE MUNICIPIOS DESTACADOS (Sur del Estado)
+        const municipiosDestacados = [
+            '15082', // Tejupilco
+            '15123', // Luvianos
+            '15008', // Amatepec
+            '15105', // Tlatlaya
+            '15080', // Sultepec
+            '15097', // Texcaltitlán
+            '15086', // Temascaltepec
+            '15066'  // Otzoloapan
+        ];
+
+        let escenarioActual = 'NIVEL_ALERTA1';
+
+        // Estilo dinámico con resaltado rojo
         function styleCoropleta(feature) {
+            // Forzamos a texto por si el GeoJSON trae el CVE_MUN como número
+            let cve = String(feature.properties.CVE_MUN);
+            let esDestacado = municipiosDestacados.includes(cve);
+
             return {
-                fillColor: getColor(feature.properties.NIVEL_ALERTA),
-                weight: 1.5,
+                fillColor: getColor(feature.properties[escenarioActual]),
+                weight: esDestacado ? 3 : 1.5, // Borde más grueso si es destacado
                 opacity: 1,
-                color: '#ffffff', // Borde blanco para separar los municipios
+                color: esDestacado ? '#ff0000' : '#ffffff', // Borde rojo si es destacado, si no blanco
                 fillOpacity: 0.75
             };
         }
 
-        // Cargar el archivo GeoJSON
-        fetch('municipios_riesgo.geojson')
+        let capaRiesgo; 
+
+        fetch('municipios_riesgo1.geojson')
             .then(response => response.json())
             .then(data => {
                 
-                // CAPA 1: Polígonos de Riesgo Predictivo
-                var capaRiesgo = L.geoJson(data, {
+                // CAPA 1: Polígonos
+                capaRiesgo = L.geoJson(data, {
                     style: styleCoropleta,
                     onEachFeature: function (feature, layer) {
-                        // Verificamos si existe el score para no mostrar error
-                        var score = feature.properties.RIESGO_PREDICTIVO ? feature.properties.RIESGO_PREDICTIVO.toFixed(2) : "N/D";
-                        
-                        layer.bindPopup(
-                            "<div style='text-align:center;'>" +
-                            "<h3 style='margin:0 0 5px 0; color:#333;'>" + feature.properties.NOM_MUN + "</h3>" +
-                            "Nivel de Alerta: <b>" + feature.properties.NIVEL_ALERTA + "</b><br>" +
-                            "Score Predictivo: " + score +
-                            "</div>"
-                        );
+                        layer.on('click', function(e) {
+                            var nivel = feature.properties[escenarioActual] || 'N/D';
+                            
+                            // Popup limpio sin el Score
+                            var contenido = "<div style='text-align:center;'>" +
+                                "<h3 style='margin:0 0 5px 0; color:#333;'>" + feature.properties.NOM_MUN + "</h3>" +
+                                "Nivel de Alerta: <b>" + nivel + "</b><br>" +
+                                "</div>";
+                            
+                            layer.bindPopup(contenido).openPopup();
+                        });
                     }
                 }).addTo(map);
 
-                // CAPA 2: Puntos de Casos Reales
+                // CAPA 2: Puntos de Casos
                 var capaCasos = L.layerGroup().addTo(map);
                 
-                // Extraemos el centro de cada municipio para poner el círculo
                 capaRiesgo.eachLayer(function(layer) {
                     var casos = layer.feature.properties.CASOS_REALES_DESPLAZAMIENTO;
                     if (casos > 0) {
                         var centroide = layer.getBounds().getCenter();
                         var circulo = L.circleMarker(centroide, {
-                            radius: (casos * 1.5) + 4, // Fórmula para que resalten a distintos tamaños
-                            fillColor: "#0055ff", // Azul rey
+                            radius: 6, // Tamaño fijo
+                            fillColor: "#0055ff",
                             color: "#ffffff", 
                             weight: 2,
                             opacity: 1,
@@ -121,38 +155,43 @@
                         }).bindPopup(
                             "<div style='text-align:center;'>" +
                             "<b>" + layer.feature.properties.NOM_MUN + "</b><br>" +
-                            "<span style='font-size:16px; color:#0055ff;'><b>" + casos + "</b> Reportes vinculados a desplazamientos</span>" +
+                            "<span style='font-size:14px; color:#0055ff;'><b>" + casos + "</b> Reportes vinculados a desplazamientos</span>" +
                             "</div>"
                         );
                         capaCasos.addLayer(circulo);
                     }
                 });
 
-                // Control de Capas interactivo (Arriba a la derecha)
+                // Control de Capas interactivo (Nombres actualizados)
                 var controles = {
-                    "🔴 Nivel de Riesgo (Polígonos)": capaRiesgo,
-                    "🔵 Casos Reales (Círculos)": capaCasos
+                    "🔴 Polígonos de Riesgo": capaRiesgo,
+                    "🔵 Reportes vinculados a desplazamientos": capaCasos
                 };
                 L.control.layers(null, controles, {collapsed: false}).addTo(map);
-            })
-            .catch(error => console.error("Error al cargar el GeoJSON:", error));
+            });
 
-        // Construcción de la Leyenda estática (Abajo a la derecha)
+        // Cambio de Escenario
+        document.getElementById('selector-escenario').addEventListener('change', function(e) {
+            escenarioActual = e.target.value; 
+            if (capaRiesgo) {
+                capaRiesgo.setStyle(styleCoropleta);
+                map.closePopup(); 
+            }
+        });
+
+        // Leyenda (Textos actualizados)
         var legend = L.control({position: 'bottomright'});
         legend.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'leyenda'),
-                niveles = ['Prioritario', 'Alto', 'Medio', 'Bajo']; // Orden invertido para que el rojo quede arriba
+                niveles = ['Prioritario', 'Alto', 'Medio', 'Bajo']; 
             
             div.innerHTML = '<h4>Riesgo Predictivo</h4>';
             for (var i = 0; i < niveles.length; i++) {
-                div.innerHTML +=
-                    '<i style="background:' + getColor(niveles[i]) + '"></i> ' +
-                    niveles[i] + '<br>';
+                div.innerHTML += '<i style="background:' + getColor(niveles[i]) + '"></i> ' + niveles[i] + '<br>';
             }
-            
             div.innerHTML += '<hr style="margin:10px 0; border:0; border-top:1px solid #ccc;">';
+            // Texto actualizado
             div.innerHTML += '<i style="background:#0055ff; border-radius:50%; height:14px; width:14px; margin-top:2px;"></i> Reportes vinculados a desplazamientos';
-            
             return div;
         };
         legend.addTo(map);

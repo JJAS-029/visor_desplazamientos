@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OGRVRTDataSource>
+    <OGRVRTLayer name="Matriz_Desplazamiento_Complet_join-Matriz_Desplazamiento_Complet_join">
+        <SrcDataSource relativeToVRT="1">Matriz_Desplazamiento_Complet_join.csv</SrcDataSource>
+        <!--Header=False-->
+        <SrcLayer>Matriz_Desplazamiento_Complet_join</SrcLayer>
+        <Field name="ID" src="ID" type="String"/>
+        <Field name="CVE_MUN" src="CVE_MUN" type="String"/>
+        <Field name="NOM_MUN" src="NOM_MUN" type="String"/>
+        <Field name="POT_TOT" src="POT_TOT" type="String"/>
+        <Field name="CASOS_REALES_DESPLAZAMIENTO" src="CASOS_REALES_DESPLAZAMIENTO" type="String"/>
+        <Field name="DESPOJO" src="DESPOJO" type="String"/>
+        <Field name="EXTORSIÓN" src="EXTORSIÓN" type="String"/>
+        <Field name="HOMICIDIOS" src="HOMICIDIOS" type="String"/>
+        <Field name="VIOLENCIA FAMILIAR" src="VIOLENCIA FAMILIAR" type="String"/>
+        <Field name="DELINCUENCIA ORGANIZADA" src="DELINCUENCIA ORGANIZADA" type="String"/>
+        <Field name="DESPOJO_TASA" src="DESPOJO_TASA" type="String"/>
+        <Field name="EXTORSIÓN_TASA" src="EXTORSIÓN_TASA" type="String"/>
+        <Field name="HOMICIDIOS_TASA" src="HOMICIDIOS_TASA" type="String"/>
+        <Field name="VIOLENCIA FAMILIAR_TASA" src="VIOLENCIA FAMILIAR_TASA" type="String"/>
+        <Field name="DELINCUENCIA ORGANIZADA_TASA" src="DELINCUENCIA ORGANIZADA_TASA" type="String"/>
+        <Field name="DESPOJO_NORM" src="DESPOJO_NORM" type="String"/>
+        <Field name="EXTORSIÓN_NORM" src="EXTORSIÓN_NORM" type="String"/>
+        <Field name="HOMICIDIOS_NORM" src="HOMICIDIOS_NORM" type="String"/>
+        <Field name="VIOLENCIA FAMILIAR_NORM" src="VIOLENCIA FAMILIAR_NORM" type="String"/>
+        <Field name="DELINCUENCIA ORGANIZADA_NORM" src="DELINCUENCIA ORGANIZADA_NORM" type="String"/>
+        <Field name="RIESGO_PREDICTIVO" src="RIESGO_PREDICTIVO" type="String"/>
+        <Field name="NIVEL_ALERTA1" src="NIVEL_ALERTA1" type="String"/>
+        <Field name="NIVEL_ALERTA2" src="NIVEL_ALERTA2" type="String"/>
+        <Field name="NIVEL_ALERTA3" src="NIVEL_ALERTA3" type="String"/>
+        <Field name="NIVEL_ALERTA4" src="NIVEL_ALERTA4" type="String"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>
