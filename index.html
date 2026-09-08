@@ -35,16 +35,15 @@
     </style>
 </head>
 <body>
-    
+
 
     <div class="panel-escenarios">
         <b>Selecciona el Modelo Predictivo:</b><br>
         <select id="selector-escenario">
-            <option value="NIVEL_ALERTA4">Escenario 1 (Base)</option>
-            <option value="NIVEL_ALERTA2">Escenario 2 (Prueba A)</option>
-            <option value="NIVEL_ALERTA3">Escenario 3 (Prueba B)</option>
-            <option value="NIVEL_ALERTA1">Escenario 4 (Prueba C)</option>
-            
+            <option value="NIVEL_ALERTA4">Escenario 1 (Presentada ayer)</option>
+            <option value="NIVEL_ALERTA2">Escenario 2 (Sin despojo)</option>
+            <option value="NIVEL_ALERTA3">Escenario 3 (Sin violencia familiar)</option>
+            <option value="NIVEL_ALERTA1">Escenario 4 (Presentada hoy)</option>
         </select>
     </div>
 
@@ -75,7 +74,7 @@
         }
 
         const municipiosDestacados = [
-            '15082', '15123', '15008', '15105', '15080', '15097', '15086', '15066'
+            '15082', '15123', '15008', '15105', '15080', '15097', '15086', '15066', '15117', '15004', '15021', '15107', '15088', '15113', '15040', '15119', '15097'
         ];
 
         let escenarioActual = 'NIVEL_ALERTA1';
