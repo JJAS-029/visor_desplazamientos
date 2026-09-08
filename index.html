@@ -192,17 +192,28 @@
             }
         });
 
+        // Leyenda actualizada con el contorno rojo
         var legend = L.control({position: 'bottomright'});
         legend.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'leyenda'),
                 niveles = ['Prioritario', 'Alto', 'Medio', 'Bajo']; 
             
-            div.innerHTML = '<h4>Riesgo Predictivo</h4>';
+            div.innerHTML = '<h4>Riesgo</h4>';
+            
+            // 1. Los colores de los niveles de alerta
             for (var i = 0; i < niveles.length; i++) {
                 div.innerHTML += '<i style="background:' + getColor(niveles[i]) + '"></i> ' + niveles[i] + '<br>';
             }
+            
             div.innerHTML += '<hr style="margin:10px 0; border:0; border-top:1px solid #ccc;">';
-            div.innerHTML += '<i style="background:#0055ff; border-radius:50%; height:14px; width:14px; margin-top:2px;"></i> Reportes vinculados a desplazamientos';
+            
+            // 2. El círculo azul de casos reales
+            div.innerHTML += '<i style="background:#0055ff; border-radius:50%; border:none; height:14px; width:14px; margin-top:2px;"></i> Casos Reales<br>';
+            
+            // 3. NUEVO: El contorno rojo para los municipios destacados
+            // Usamos background:transparent y un border rojo grueso
+            div.innerHTML += '<i style="background:transparent; border:3px solid #ff0000; opacity:1; box-sizing:border-box;"></i> Zona Prioritaria (Sur)';
+            
             return div;
         };
         legend.addTo(map);
